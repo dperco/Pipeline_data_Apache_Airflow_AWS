@@ -1,0 +1,90 @@
+Explicación de Cada Caja (DAG)
+
+Inicialización:
+Descripción: Esta etapa se encarga de realizar todas las tareas de configuración inicial necesarias 
+para el pipeline.
+Tarea Principal: inicializar_task
+Función: Configura el entorno y prepara los recursos necesarios para las siguientes etapas.
+
+
+Conexión a Kafka:
+Descripción: En esta etapa, se establece la conexión con Kafka para consumir datos.
+Tarea Principal: conexion_kafka_task
+Función: Conecta a Kafka y asegura que los datos se consuman correctamente desde los tópicos configurados.
+
+
+Tareas de Kubernetes:
+Descripción: Esta etapa gestiona las tareas relacionadas con Kubernetes, como la creación y 
+gestión de pods y servicios.
+Tarea Principal: kubernetes_task
+Función: Ejecuta scripts y comandos necesarios para la gestión de recursos en Kubernetes.
+
+
+Conexión a Spark:
+Descripción: Establece la conexión con Spark y prepara el entorno para el procesamiento de datos.
+Tarea Principal: conexion_spark_task
+Función: Configura y conecta a un clúster de Spark para el procesamiento de datos.
+
+
+Transformación de Datos:
+Descripción: Transforma los datos según las necesidades del negocio.
+Tarea Principal: transformar_datos_task
+Función: Aplica transformaciones y limpiezas a los datos para prepararlos para su carga final.
+
+
+Carga de Datos:
+Descripción: Carga los datos transformados en el destino final, como una base de datos o un data warehouse.
+Tarea Principal: cargar_datos_task
+Función: Transfiere los datos procesados y transformados al destino final.
+Notificaciones por Correo
+Cada etapa del pipeline tiene una notificación por correo configurada para alertar en caso de falla.
+ Estas notificaciones aseguran que cualquier problema en el pipeline sea detectado
+  y gestionado rápidamente.
+
+
+Monitoreo 
+Monitor Logs: Monitorea los logs del sistema.
+Monitor Metrics: Monitorea las métricas de rendimiento.
+Send Alerts: Envía alertas si se detectan problemas.
+Generate Reports: Genera reportes basados en los datos de monitoreo.
+A continuación, se muestra un diagrama conceptual de cómo se vería este DAG:
+
+         +-----------------+
+         |   Monitor Logs  |
+         +--------+--------+
+                  |
+                  v
+         +-----------------+
+         |  Monitor Metrics |
+         +--------+--------+
+                  |
+                  v
+         +-----------------+
+         |   Send Alerts   |
+         +--------+--------+
+                  |
+                  v
+         +-----------------+
+         | Generate Reports|
+         +-----------------+
+Explicación del Diagrama
+
+Monitor Logs:
+Esta tarea se encarga de monitorear los logs del sistema. Es la primera tarea en el DAG y no tiene
+ dependencias previas.
+
+Monitor Metrics:
+Esta tarea monitorea las métricas de rendimiento del sistema. Depende de la tarea Monitor Logs
+ y se ejecuta después de que esta haya finalizado.
+
+Send Alerts:
+Esta tarea envía alertas si se detectan problemas en los logs o métricas. Depende de la tarea 
+Monitor Metrics y se ejecuta después de que esta haya finalizado.
+
+Generate Reports:
+Esta tarea genera reportes basados en los datos de monitoreo. Depende de la tarea Send Alerts y
+ se ejecuta después de que esta haya finalizado.
+
+
+
+

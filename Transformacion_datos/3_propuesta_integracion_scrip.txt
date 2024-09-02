@@ -1,0 +1,29 @@
+Para incorporar estos scripts en el pipeline existente,se deberian   seguir estos pasos:
+
+Integración en el Pipeline ETL:
+
+Extracción: Asegúrarse de que los datos de las tablas Interacciones, Representantes y NPS estén disponibles
+ en el Datalake.
+
+Transformación: Utilizar una herramienta de orquestación como Apache Airflow o AWS Glue para ejecutar 
+estos scripts SQL como parte del pipeline de transformación de datos.
+
+Carga: Los resultados de los scripts pueden ser almacenados en nuevas tablas en el Datalake o en un
+ data warehouse como Amazon Redshift para su posterior análisis por el equipo de BI.
+
+
+Automatización:
+
+Programación: Programa la ejecución de estos scripts SQL en intervalos regulares (por ejemplo, 
+mensualmente) para mantener los datos actualizados.
+
+Monitoreo: Implementa alertas y monitoreo para asegurar que los scripts se ejecuten correctamente 
+y los resultados sean consistentes.
+
+Documentación y Validación:
+
+Documentación: Documenta cada paso del proceso, incluyendo la lógica de los scripts SQL y cómo se 
+integran en el pipeline.
+
+Validación: Realiza pruebas exhaustivas para validar que los cálculos de NPS son correctos y que los
+ datos se procesan de manera eficiente.

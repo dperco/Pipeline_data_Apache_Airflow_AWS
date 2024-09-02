@@ -1,0 +1,319 @@
+Flujo de Trabajo y Ejecución de Cada DAG
+DAG de Inicialización:
+
+Tarea Principal: Realiza tareas de configuración inicial y preparación del entorno.
+Notificación por Correo: Si ocurre una falla, se envía un correo electrónico a tu_correo@example.com.
+python
+from airflow import DAG
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.utils.dates import days_ago
+from airflow.operators.email_operator import EmailOperator
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+    'retries': 1,
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'email': ['correo_aviso_fallas@example.com'],
+}
+
+dag = DAG(
+    'inicializacion',
+    default_args=default_args,
+    schedule_interval='@daily',
+)
+
+inicializar_task = DummyOperator(
+    task_id='inicializar',
+    dag=dag,
+)
+
+email_task = EmailOperator(
+    task_id='enviar_email_falla',
+    to='correo_aviso_fallas@example.com',
+    subject='Falla en el DAG de Inicialización',
+    html_content='Ha ocurrido una falla en el DAG de Inicialización.',
+    trigger_rule='one_failed',
+    dag=dag,
+)
+
+inicializar_task >> email_task
+DAG de Conexión a Kafka:
+
+Tarea Principal: Establece la conexión a Kafka y asegura el consumo correcto de datos.
+Dependencia: Espera a que el DAG de Inicialización termine.
+Notificación por Correo: Si ocurre una falla, se envía un correo electrónico a tu_correo@example.com.
+python
+from airflow import DAG
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.utils.dates import days_ago
+from airflow.operators.email_operator import EmailOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+    'retries': 1,
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'email': ['correo_aviso_fallas@example.com'],
+}
+
+dag = DAG(
+    'conexion_kafka',
+    default_args=default_args,
+    schedule_interval='@daily',
+)
+
+esperar_inicializacion = ExternalTaskSensor(
+    task_id='esperar_inicializacion',
+    external_dag_id='inicializacion',
+    external_task_id='inicializar',
+    dag=dag,
+)
+
+conexion_kafka_task = KubernetesPodOperator(
+    namespace='default',
+    image="usuario_docker/conexion-kafka:latest",
+    cmds=["python", "conexion_kafka.py"],
+    name="conexion_kafka_task",
+    task_id="conexion_kafka_task",
+    get_logs=True,
+    dag=dag,
+)
+
+email_task = EmailOperator(
+    task_id='enviar_email_falla',
+    to='correo_aviso_fallas@example.com',
+    subject='Falla en el DAG de Conexión a Kafka',
+    html_content='Ha ocurrido una falla en el DAG de Conexión a Kafka.',
+    trigger_rule='one_failed',
+    dag=dag,
+)
+
+esperar_inicializacion >> conexion_kafka_task >> email_task
+DAG de Kubernetes:
+
+Tarea Principal: Gestiona las tareas relacionadas con Kubernetes, como la creación y gestión de pods y servicios.
+Dependencia: Espera a que el DAG de Conexión a Kafka termine.
+Notificación por Correo: Si ocurre una falla, se envía un correo electrónico a tu_correo@example.com.
+python
+from airflow import DAG
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.utils.dates import days_ago
+from airflow.operators.email_operator import EmailOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+    'retries': 1,
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'email': ['correo_aviso_fallas@example.com'],
+}
+
+dag = DAG(
+    'kubernetes_tasks',
+    default_args=default_args,
+    schedule_interval='@daily',
+)
+
+esperar_conexion_kafka = ExternalTaskSensor(
+    task_id='esperar_conexion_kafka',
+    external_dag_id='conexion_kafka',
+    external_task_id='conexion_kafka_task',
+    dag=dag,
+)
+
+kubernetes_task = KubernetesPodOperator(
+    namespace='default',
+    image="usuario_docker/kubernetes-tasks:latest",
+    cmds=["python", "kubernetes_tasks.py"],
+    name="kubernetes_task",
+    task_id="kubernetes_task",
+    get_logs=True,
+    dag=dag,
+)
+
+email_task = EmailOperator(
+    task_id='enviar_email_falla',
+    to='correo_aviso_fallas@example.com',
+    subject='Falla en el DAG de Kubernetes',
+    html_content='Ha ocurrido una falla en el DAG de Kubernetes.',
+    trigger_rule='one_failed',
+    dag=dag,
+)
+
+esperar_conexion_kafka >> kubernetes_task >> email_task
+DAG de Conexión a Spark:
+
+Tarea Principal: Establece la conexión a Spark y prepara el entorno para el procesamiento de datos.
+Dependencia: Espera a que el DAG de Kubernetes termine.
+Notificación por Correo: Si ocurre una falla, se envía un correo electrónico a tu_correo@example.com.
+python
+from airflow import DAG
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.utils.dates import days_ago
+from airflow.operators.email_operator import EmailOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+    'retries': 1,
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'email': ['correo_aviso_fallas@example.com'],
+}
+
+dag = DAG(
+    'conexion_spark',
+    default_args=default_args,
+    schedule_interval='@daily',
+)
+
+esperar_kubernetes_tasks = ExternalTaskSensor(
+    task_id='esperar_kubernetes_tasks',
+    external_dag_id='kubernetes_tasks',
+    external_task_id='kubernetes_task',
+    dag=dag,
+)
+
+conexion_spark_task = KubernetesPodOperator(
+    namespace='default',
+    image="usuario_docker/conexion-spark:latest",
+    cmds=["python", "conexion_spark.py"],
+    name="conexion_spark_task",
+    task_id="conexion_spark_task",
+    get_logs=True,
+    dag=dag,
+)
+
+email_task = EmailOperator(
+    task_id='enviar_email_falla',
+    to='correo_aviso_fallas@example.com',
+    subject='Falla en el DAG de Conexión a Spark',
+    html_content='Ha ocurrido una falla en el DAG de Conexión a Spark.',
+    trigger_rule='one_failed',
+    dag=dag,
+)
+
+esperar_kubernetes_tasks >> conexion_spark_task >> email_task
+DAG de Transformación:
+
+Tarea Principal: Transforma los datos según las necesidades del negocio.
+Dependencia: Espera a que el DAG de Conexión a Spark termine.
+Notificación por Correo: Si ocurre una falla, se envía un correo electrónico a tu_correo@example.com.
+python
+from airflow import DAG
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.utils.dates import days_ago
+from airflow.operators.email_operator import EmailOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+    'retries': 1,
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'email': ['correo_aviso_fallas@example.com'],
+}
+
+dag = DAG(
+    'transformacion_datos',
+    default_args=default_args,
+    schedule_interval='@daily',
+)
+
+esperar_conexion_spark = ExternalTaskSensor(
+    task_id='esperar_conexion_spark',
+    external_dag_id='conexion_spark',
+    external_task_id='conexion_spark_task',
+    dag=dag,
+)
+
+transformar_datos_task = KubernetesPodOperator(
+    namespace='default',
+    image="usuario_docker/transformacion-datos:latest",
+    cmds=["python", "transformacion_datos.py"],
+    name="transformar_datos_task",
+    task_id="transformar_datos_task",
+    get_logs=True,
+    dag=dag,
+)
+
+email_task = EmailOperator(
+    task_id='enviar_email_falla',
+    to='correo_aviso_fallas@example.com',
+    subject='Falla en el DAG de Transformación de Datos',
+    html_content='Ha ocurrido una falla en el DAG de Transformación de Datos.',
+    trigger_rule='one_failed',
+    dag=dag,
+)
+
+esperar_conexion_spark >> transformar_datos_task >> email_task
+DAG de Carga de Datos:
+
+Tarea Principal: Carga los datos transformados en el destino final.
+Dependencia: Espera a que el DAG de Transformación termine.
+Notificación por Correo: Si ocurre una falla, se envía un correo electrónico a tu_correo@example.com.
+python
+from airflow import DAG
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.utils.dates import days_ago
+from airflow.operators.email_operator import EmailOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+    'retries': 1,
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'email': ['tu_correo@example.com'],
+}
+
+dag = DAG(
+    'carga_datos',
+    default_args=default_args,
+    schedule_interval='@daily',
+)
+
+esperar_transformacion_datos = ExternalTaskSensor(
+    task_id='esperar_transformacion_datos',
+    external_dag_id='transformacion_datos',
+    external_task_id='transformar_datos_task',
+    dag=dag,
+)
+
+cargar_datos_task = KubernetesPodOperator(
+    namespace='default',
+    image="usuario_docker/carga-datos:latest",
+    cmds=["python", "cargar_datos.py"],
+    name="cargar_datos_task",
+    task_id="cargar_datos_task",
+    get_logs=True,
+    dag=dag,
+)
+
+email_task = EmailOperator(
+    task_id='enviar_email_falla',
+    to='correo_aviso_fallas@example.com',
+    subject='Falla en el DAG de Carga de Datos',
+    html_content='Ha ocurrido una falla en el DAG de Carga de Datos.',
+    trigger_rule='one_failed',
+    dag=dag,
+)
+
+esperar_transformacion_datos >> cargar_datos_task >> email_task
+Resumen del Flujo de Trabajo
+DAG de Inicialización se ejecuta primero y realiza las tareas de configuración inicial.
+DAG de Conexión a Kafka espera a que el DAG de Inicialización termine y luego se ejecuta para establecer la conexión a Kafka.
+DAG de Kubernetes espera a que el DAG de Conexión a Kafka termine y luego se ejecuta para gestionar las tareas relacionadas con Kubernetes.
+DAG de Conexión a Spark espera a que el DAG de Kubernetes termine y luego se ejecuta para establecer la conexión a Spark.
+DAG de Transformación espera a que el DAG de Conexión a Spark termine y luego se ejecuta para transformar los datos.
+DAG de Carga de Datos espera a que el DAG de Transformación termine y luego se ejecuta para cargar los datos transformados en el destino final.
+En caso de fallas en cualquier DAG, se enviará una notificación por correo electrónico a tu_correo@example.com para alertar sobre el problema. Esto permite una monitorización efectiva y una rápida respuesta a cualquier problema que pueda surgir en el pipeline.
